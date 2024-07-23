@@ -27,8 +27,6 @@ ABC_NAMESPACE_IMPL_START
 
 // the largest number of cuts considered
 #define  MAP_CUTS_MAX_COMPUTE   1000
-// the largest number of cuts used
-#define  MAP_CUTS_MAX_USE       250
 
 // temporary hash table to store the cuts
 typedef struct Map_CutTableStrutct_t Map_CutTable_t;
@@ -412,8 +410,6 @@ Map_Cut_t * Map_CutMergeLists( Map_Man_t * p, Map_CutTable_t * pTable,
             pLists[(int)pCut->nLeaves] = pCut;
             // count this cut and quit if limit is reached
             Counter++;
-            if ( Counter == MAP_CUTS_MAX_COMPUTE )
-                goto QUITS;
         }
         for ( k = 0; k < i; k++ )
         {
@@ -446,8 +442,6 @@ Map_Cut_t * Map_CutMergeLists( Map_Man_t * p, Map_CutTable_t * pTable,
             pLists[(int)pCut->nLeaves] = pCut;
             // count this cut and quit if limit is reached
             Counter++;
-            if ( Counter == MAP_CUTS_MAX_COMPUTE )
-                goto QUITS;
         }
     }
     // consider the rest of them
@@ -483,10 +477,7 @@ Map_Cut_t * Map_CutMergeLists( Map_Man_t * p, Map_CutTable_t * pTable,
             pLists[(int)pCut->nLeaves] = pCut;
             // count this cut and quit if limit is reached
             Counter++;
-            if ( Counter == MAP_CUTS_MAX_COMPUTE )
-                goto QUITS;
         }
-QUITS :
     // combine all the lists into one
     pListNew  = NULL;
     ppListNew = &pListNew;
@@ -550,10 +541,7 @@ Map_Cut_t * Map_CutMergeLists2( Map_Man_t * p, Map_CutTable_t * pTable,
             pLists[(int)pCut->nLeaves] = pCut;
             // count this cut and quit if limit is reached
             Counter++;
-            if ( Counter == MAP_CUTS_MAX_COMPUTE )
-                goto QUITS;
         }
-QUITS :
     // combine all the lists into one
     pListNew  = NULL;
     ppListNew = &pListNew;
@@ -1000,25 +988,16 @@ int Map_CutSortCutsCompare( Map_Cut_t ** pC1, Map_Cut_t ** pC2 )
 Map_Cut_t * Map_CutSortCuts( Map_Man_t * pMan, Map_CutTable_t * p, Map_Cut_t * pList )
 {
     Map_Cut_t * pListNew;
-    int nCuts, i;
+    int nCuts;
 //    abctime clk;
     // move the cuts from the list into the array
     nCuts = Map_CutList2Array( p->pCuts1, pList );
-    assert( nCuts <= MAP_CUTS_MAX_COMPUTE );
     // sort the cuts
 //clk = Abc_Clock();
     qsort( (void *)p->pCuts1, (size_t)nCuts, sizeof(Map_Cut_t *), 
             (int (*)(const void *, const void *)) Map_CutSortCutsCompare );
 //pMan->time2 += Abc_Clock() - clk;
     // move them back into the list
-    if ( nCuts > MAP_CUTS_MAX_USE - 1 )
-    {
-        // free the remaining cuts
-        for ( i = MAP_CUTS_MAX_USE - 1; i < nCuts; i++ )
-            Extra_MmFixedEntryRecycle( pMan->mmCuts, (char *)p->pCuts1[i] );
-        // update the number of cuts
-        nCuts = MAP_CUTS_MAX_USE - 1;
-    }
     pListNew = Map_CutArray2List( p->pCuts1, nCuts );
     return pListNew;
 }
